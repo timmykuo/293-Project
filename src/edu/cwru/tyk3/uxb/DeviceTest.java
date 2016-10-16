@@ -12,6 +12,7 @@ public class DeviceTest {
 	
 	Hub hub1;
 	Hub hub2;
+	Hub hub3;
 	CannonPrinter cannonprinter;
 	SisterPrinter sisterprinter;
 	SisterPrinter sisterprinter2;
@@ -25,6 +26,7 @@ public class DeviceTest {
 		test.add(Connector.Type.PERIPHERAL);
 		test.add(Connector.Type.COMPUTER);
 		test.add(Connector.Type.COMPUTER);
+		test.add(Connector.Type.PERIPHERAL);
 		
 		//build a hub
 		Hub.Builder hb = new Hub.Builder(Integer.valueOf(1));
@@ -33,6 +35,7 @@ public class DeviceTest {
 		hb.connectors(test);
 		hub1 = hb.build();
 		hub2 = hb.build();
+		hub3 = hb.build();
 		
 		//printers and videos can only have connectors of type peripheral
 		ArrayList<Connector.Type> test2 = new ArrayList<Connector.Type>(); 
@@ -76,8 +79,10 @@ public class DeviceTest {
 	
 	@Test
 	public void testReachableDevices() {
-		
-		System.out.println(hub2.reachableDevices());
+		assertEquals("The number of reachable devices of cannonprinter should be equal to direct and indirect devices", cannonprinter.reachableDevices().size(), 5);
+		assertEquals("The number of reachalbe devices of hub1 should be equal to direct and indirect devices", hub1.reachableDevices().size(), 5);
+		assertEquals("The number of reachable devices of hub2 should be equal to direct and indirect devices", hub2.reachableDevices().size(), 5);
+		assertEquals("The number of reachable devices of hub3 should be 0", hub3.reachableDevices().size(), 0);
 	}
 	
 	@Test

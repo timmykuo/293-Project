@@ -16,14 +16,8 @@ public class Hub extends AbstractDevice<Hub.Builder>{
 		//validate to see if message/connector is null and if the connector belongs to the device
 		super.validate(message, connector);
 		
-		//otherwise send info to other connectors
-		for(Connector c : this.getConnectors()) {
-			if(!c.equals(connector)) {
-				if(c.getPeer().isPresent()) {
-					c.getPeer().get().recv(message);
-				}
-			}
-		}
+		//otherwise send info to other connectors except the connector it received message from
+		forward(message, connector);
 	}
 
 	@Override
@@ -31,8 +25,13 @@ public class Hub extends AbstractDevice<Hub.Builder>{
 		//validate to see if message/connector is null and if the connector belongs to the device
 		super.validate(message, connector);
 		
-		//otherwise send message to all of its connectors
+		//otherwise send message to all of its connectors except the connector it received message from
+		forward(message, connector);
+	}
+	
+	private void forward(Message message, Connector connector) {
 		for(Connector c : this.getConnectors()) {
+			//don't send to the connector that the message was received from
 			if(!c.equals(connector)) {
 				if(c.getPeer().isPresent()) {
 					c.getPeer().get().recv(message);

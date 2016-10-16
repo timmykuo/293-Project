@@ -55,6 +55,7 @@ public class Connector {
 	}
 	
 	private void validate(Connector peer) throws ConnectionException{
+		
 		//checks if the connector already has a peer
 		if(this.peer.isPresent() || peer.getPeer().isPresent()) {
 			throw new ConnectionException(this, ConnectionException.ErrorCode.CONNECTOR_BUSY);

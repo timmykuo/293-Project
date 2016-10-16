@@ -16,14 +16,12 @@ public abstract class AbstractDevice<T extends AbstractDevice.Builder<T>> implem
 	private final Optional<BigInteger> serialNumber;
 	private final List<Connector> connectors;
 	private static final Logger log = Logger.getLogger(AbstractDevice.class.getName());
-	private Set<Device> reachable;
 	
 	protected AbstractDevice(Builder<T> builder) {
 		this.version = builder.getVersion();
 		this.productCode = builder.getProductCode();
 		this.serialNumber = builder.getSerialNumber();
 		this.connectors = convertToConnectorList(builder.connectorTypes);
-		this.reachable = new HashSet<Device>();
 	}
 	
 	//converts the given list of connector Types into a list of connectors for the abstract device
@@ -54,7 +52,7 @@ public abstract class AbstractDevice<T extends AbstractDevice.Builder<T>> implem
 	public Set<Device> peerDevices() {
 		Set<Device> devices = new HashSet<Device>();
 		for(Connector c : connectors) {
-			//if peer is not an empty optional
+			//if peer is not empty
 			if(c.getPeer().isPresent()) {
 				devices.add(c.getPeer().get().getDevice());
 			}
@@ -62,27 +60,54 @@ public abstract class AbstractDevice<T extends AbstractDevice.Builder<T>> implem
 		return devices;
 	}
 	
-	//returns a set of devices that are connected directly and indirectly 
+	//returns all the reachable devices both directly and indirectly from this device
 	public Set<Device> reachableDevices() {
-		int checker = reachable.size();
-		reachable.addAll(this.peerDevices());
+		Set<Device> reachable = new HashSet<Device>();
+		Queue<Device> queue = new LinkedList<Device>();
+		//add in the current device
+		reachable.add(this);
 		
-		//if size of the set does not change, return the set
-		if(checker == reachable.size()) {
-			return reachable;
+		queue.add(this);
+		while(!queue.isEmpty()) {
+			Device head = queue.poll();
+			
+			//add in all peer devices of head to reachable that are not already in the queue or reachable
+			addDevice(head, queue, reachable);
 		}
 		
-		//for each device in the peer devices, recurse 
-		for(Device d : this.peerDevices()) {
-			reachable.addAll(d.reachableDevices());
+		//remove the current device
+		reachable.remove(this);
+		return reachable;
+	}
+	
+	//adds device to the set
+	private Set<Device> addDevice(Device head, Queue<Device> queue, Set<Device> reachable) {
+		for(Device device : head.peerDevices()) {
+			if(reachable.add(device)) {
+				addDeviceToQueue(device, queue);
+			}
+			else {
+				//only add to queue if device successfully added to reachable
+				//so no else case
+			}
 		}
 		
-		return reachable;	
+		return reachable;
+	}
+	
+	//adds device to queue
+	private Queue<Device> addDeviceToQueue(Device device, Queue<Device> queue) {
+		//if queue already contains the device, then don't add it
+		if(!queue.contains(device)) {
+			queue.add(device);
+		}
+		
+		return queue;
 	}
 
 	public boolean isReachable(Device device) {
 		Queue<Device> queue = new LinkedList<Device>();
-		//add this device into the queue
+
 		queue.add(this);
 		while(!queue.isEmpty()) {
 			//retrieve and remove the first element
@@ -91,15 +116,23 @@ public abstract class AbstractDevice<T extends AbstractDevice.Builder<T>> implem
 			if(head.equals(device)) {
 				return true;
 			}
-			//else for each device in the head's peer devices
-			for(Device d : head.peerDevices()) {
-				//if queue does not contain d, then add it, otherwise don't add it
-				if(!queue.contains(d)) {
-					queue.add(d);
-				}
+			//add peer devices into queue 
+			addToQueue(head, queue);
+		}
+		
+		return false;
+	}
+	
+	private Queue<Device> addToQueue(Device head, Queue<Device> queue) {
+		//else for each device in the head's peer devices
+		for(Device d : head.peerDevices()) {
+			//if queue does not contain d, then add it, otherwise don't add it
+			if(!queue.contains(d)) {
+				queue.add(d);
 			}
 		}
-		return false;
+		
+		return queue;
 	}
 	
 	//validator for device.recv method

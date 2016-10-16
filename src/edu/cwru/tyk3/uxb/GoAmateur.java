@@ -36,6 +36,10 @@ public class GoAmateur extends AbstractVideo<GoAmateur.Builder>{
 		//validate to see if message/connector is null and if the connector belongs to the device
 		super.validate(message, connector);
 		
+		sendBinaryMessage293();
+	}
+	
+	private void sendBinaryMessage293(){ 
 		for(Connector c : this.getConnectors()) {
 			if(c.getPeer().isPresent()) {
 				c.getPeer().get().recv(new BinaryMessage(BigInteger.valueOf(293)));
